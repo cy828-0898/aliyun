@@ -1,10 +1,7 @@
-name: Sync-Images-to-DockerHub-Example
-run-name: ${{ github.actor }} is Syncing Images to DockerHub and Alibaba Cloud ACR.
+name: Sync Docker Hub Image to Alibaba Cloud ACR
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
     branches: [ "main" ]
   workflow_dispatch:
 
@@ -12,23 +9,20 @@ jobs:
   syncimages:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Repos
+    - name: Checkout Repository
       uses: actions/checkout@v3
       
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2.9.1
 
-    - name: Login to Docker Hub
-      uses: docker/login-action@v2.2.0
-      with:
-        registry: registry.hub.docker.com
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-        logout: false
-
     - name: Login to Alibaba Cloud ACR
       run: echo "${{ secrets.ACR_PASSWORD }}" | docker login --username "${{ secrets.ACR_USERNAME }}" registry.cn-hangzhou.aliyuncs.com --password-stdin
 
-    - name: Use Skopeo to Sync Image from Docker Hub to Alibaba Cloud ACR
-      run: |
-        skopeo copy docker://docker.io/rancher/fleet-agent:v0.9.5 docker://registry.cn-hangzhou.aliyuncs.com/rancher-images/fleet-agent:v0.9.5
+    - name: Pull Docker Image from Docker Hub
+      run: docker pull docker.io/rancher/fleet-agent:v0.9.5
+
+    - name: Tag Docker Image for Alibaba Cloud ACR
+      run: docker tag docker.io/rancher/fleet-agent:v0.9.5 registry.cn-hangzhou.aliyuncs.com/your-acr-namespace/fleet-agent:v0.9.5
+
+    - name: Push Docker Image to Alibaba Cloud ACR
+      run: docker push registry.cn-hangzhou.aliyuncs.com/cy828docker/fleet-agent:v0.9.5
